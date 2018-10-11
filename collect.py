@@ -3,7 +3,7 @@
 # Collect all:
     # python collect.py
 # Collect just synthetic instruments sorted by pitch and grouped by instrument family:
-    # python collect.py -filter "instrument_source_str=synthetic" -sort "pitch=desc,instrument_family_str=asc" -overlap 100
+    # python collect.py -filter "instrument_source_str=acoustic" -sort "pitch=desc,instrument_family_str=asc" -overlap 100
     # python collect.py -filter "instrument_family_str=guitar,instrument_source_str=acoustic" -sort "pitch=desc,instrument_str=asc" -overlap 100
 
 import argparse
@@ -132,7 +132,8 @@ for i, f in enumerate(files):
 
     # add to manifest
     manifest[f["note_str"]] = [ms, clipDur]
-    ms += (clipDur - OVERLAP)
+    overlap = min(OVERLAP, clipDur/2)
+    ms += (clipDur - overlap)
 
     # progress
     sys.stdout.write('\r')
