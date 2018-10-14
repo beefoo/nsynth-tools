@@ -1,13 +1,15 @@
 # -*- coding: utf-8 -*-
 
 # View all:
-    # python stats.py
-# Just view synthetic bass:
-    # python stats.py -filter "instrument_family_str=bass,instrument_source_str=synthetic"
+    # python stats.py -in downloads/nsynth-train/examples.json
+# Sample queries:
+    # python stats.py -filter "instrument_family_str=bass&instrument_source_str=synthetic"
+    # python stats.py -in downloads/nsynth-train/examples.json -filter "instrument_family_str=mallet&instrument_source_str=acoustic&pitch=<60&pitch=>40&velocity=<75"
 
 import argparse
 import collections
 import json
+from lib import *
 import math
 from matplotlib import pyplot as plt
 import os
@@ -18,14 +20,14 @@ import sys
 # input
 parser = argparse.ArgumentParser()
 parser.add_argument('-in', dest="INPUT_JSON", default="downloads/nsynth-test/examples.json", help="Input JSON file")
-parser.add_argument('-filter', dest="FILTER", default="", help="Comma-separted pairs, e.g. instrument_family_str=bass,instrument_source_str=synthetic")
+parser.add_argument('-filter', dest="FILTER", default="", help="Comma-separted pairs, e.g. instrument_family_str=bass&instrument_source_str=synthetic")
 args = parser.parse_args()
 
 # Parse arguments
 INPUT_JSON = args.INPUT_JSON
-FILTERS = [] if len(args.FILTER) <= 0 else [tuple(f.split("=")) for f in args.FILTER.split(",")]
+FILTERS = [] if len(args.FILTER) <= 0 else [tuple(f.split("=")) for f in args.FILTER.split("&")]
 
-PLOT_SIZE = (24, 9)
+PLOT_SIZE = (24, 8)
 ROWS = 2
 MAX_LABELS = 12
 
@@ -41,9 +43,7 @@ files.sort()
 files = [dataIn[f] for f in files]
 # pprint(files[:3])
 
-# Filter results
-for key, value in FILTERS:
-    files = [f for f in files if str(f[key])==str(value)]
+files = filterResults(files, FILTERS)
 
 fileCount = len(files)
 if len(FILTERS) > 0:

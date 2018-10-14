@@ -1,13 +1,15 @@
 # -*- coding: utf-8 -*-
 
 # Collect all:
-    # python collect.py
-# Collect just synthetic instruments sorted by pitch and grouped by instrument family:
-    # python collect.py -filter "instrument_source_str=acoustic" -sort "pitch=desc,instrument_family_str=asc" -overlap 100
-    # python collect.py -filter "instrument_family_str=guitar,instrument_source_str=acoustic" -sort "pitch=desc,instrument_str=asc" -overlap 100
+    # python collect.py -in downloads/nsynth-train/examples.json
+# Sample filters/sorters:
+    # python collect.py -filter "instrument_source_str=acoustic" -sort "pitch=desc&instrument_family_str=asc" -overlap 100
+    # python collect.py -filter "instrument_family_str=guitar&instrument_source_str=acoustic" -sort "pitch=desc&instrument_str=asc" -overlap 100
+    # python collect.py -in downloads/nsynth-train/examples.json -audio "downloads/nsynth-train/audio/%s.wav" -filter "instrument_family_str=mallet&instrument_source_str=acoustic&pitch=<60&pitch=>40&velocity=<75" -sort "pitch=desc&instrument_str=asc" -overlap 100 -out "output/mallet_acoustic_p40-60_v0-75_hz.mp3" -manifest "output/mallet_acoustic_p40-60_v0-75_hz.json"
 
 import argparse
 import json
+from lib import *
 import math
 import os
 import numpy as np
@@ -20,8 +22,8 @@ import time
 parser = argparse.ArgumentParser()
 parser.add_argument('-in', dest="INPUT_JSON", default="downloads/nsynth-test/examples.json", help="Input JSON file")
 parser.add_argument('-audio', dest="INPUT_AUDIO", default="downloads/nsynth-test/audio/%s.wav", help="Input audio file pattern")
-parser.add_argument('-filter', dest="FILTER", default="", help="Comma-separated pairs, e.g. instrument_family_str=bass,instrument_source_str=synthetic")
-parser.add_argument('-sort', dest="SORT_BY", default="", help="Comma-separated pairs, e.g. pitch=desc,instrument_family_str=asc")
+parser.add_argument('-filter', dest="FILTER", default="", help="Query string, e.g. instrument_family_str=bass&instrument_source_str=synthetic")
+parser.add_argument('-sort', dest="SORT_BY", default="", help="Query string, e.g. pitch=desc&instrument_family_str=asc")
 parser.add_argument('-max', dest="MAX_DURATION", default=6000, type=int, help="Max duration in seconds")
 parser.add_argument('-cstart', dest="CLIP_START", default=0, type=int, help="Clip start in milliseconds")
 parser.add_argument('-cdur', dest="CLIP_DUR", default=250, type=int, help="Clip duration in milliseconds")
@@ -37,8 +39,8 @@ args = parser.parse_args()
 # Parse arguments
 INPUT_JSON = args.INPUT_JSON
 INPUT_AUDIO = args.INPUT_AUDIO
-FILTERS = [] if len(args.FILTER) <= 0 else [tuple(f.split("=")) for f in args.FILTER.split(",")]
-SORTERS = [] if len(args.SORT_BY) <= 0 else [tuple(f.split("=")) for f in args.SORT_BY.split(",")]
+FILTERS = [] if len(args.FILTER) <= 0 else [tuple(f.split("=")) for f in args.FILTER.split("&")]
+SORTERS = [] if len(args.SORT_BY) <= 0 else [tuple(f.split("=")) for f in args.SORT_BY.split("&")]
 MAX_DURATION = args.MAX_DURATION * 1000
 CLIP_START = args.CLIP_START
 CLIP_DUR = args.CLIP_DUR
@@ -67,8 +69,7 @@ files.sort()
 files = [dataIn[f] for f in files]
 
 # Filter results
-for key, value in FILTERS:
-    files = [f for f in files if str(f[key])==str(value)]
+files = filterResults(files, FILTERS)
 
 # Sort results
 for key, direction in SORTERS:
